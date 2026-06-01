@@ -5,19 +5,19 @@ import { Signal } from '@/lib/supabase'
 type Props = { signals: Signal[] }
 
 const regimeLabel: Record<number, string> = {
-  0: '🔴 Bajista',
-  1: '🟡 Lateral',
-  2: '🟢 Alcista',
+  0: '↓ Bajista',
+  1: '→ Lateral',
+  2: '↑ Alcista',
 }
 
 function fmtTs(ts: string) {
   const d = new Date(ts)
-  return `${d.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit' })} ${d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' })}`
+  return `${d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
 }
 
 export default function SignalsTable({ signals }: Props) {
   if (!signals.length) return (
-    <div style={{ padding: '30px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
+    <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
       Sin señales aún. El bot empieza en el primer ciclo.
     </div>
   )
@@ -29,9 +29,9 @@ export default function SignalsTable({ signals }: Props) {
           <tr style={{ borderBottom: '1px solid var(--border)' }}>
             {['Hora', 'Símbolo', 'Acción', 'Precio', 'Prob.', 'Régimen', 'IC', 'Razón'].map(h => (
               <th key={h} style={{
-                padding: '8px 12px', textAlign: 'left',
-                color: 'var(--text-muted)', fontWeight: 600,
-                fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em',
+                padding: '8px 10px', textAlign: 'left',
+                fontSize: '0.63rem', letterSpacing: '0.1em',
+                textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 400,
               }}>{h}</th>
             ))}
           </tr>
@@ -39,41 +39,43 @@ export default function SignalsTable({ signals }: Props) {
         <tbody>
           {signals.map(s => {
             const isLong = s.action === 'LONG'
-            const actionColor = isLong ? '#00e676' : s.action === 'NO_SIGNAL' ? '#90a4ae' : '#e8eaf6'
             return (
               <tr key={s.id} style={{
                 borderBottom: '1px solid var(--border)',
-                background: isLong ? 'rgba(0,230,118,0.04)' : 'transparent',
-                transition: 'background 0.15s',
+                background: isLong ? 'rgba(45,122,79,0.04)' : 'transparent',
               }}>
-                <td style={{ padding: '9px 12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: 12 }}>
+                <td style={{ padding: '9px 10px', color: 'var(--muted)', fontSize: 11 }}>
                   {fmtTs(s.ts)}
                 </td>
-                <td style={{ padding: '9px 12px', fontWeight: 700, letterSpacing: '0.04em' }}>
+                <td style={{ padding: '9px 10px', fontWeight: 500, fontFamily: 'var(--serif)', fontSize: 15 }}>
                   {s.symbol}
                 </td>
-                <td style={{ padding: '9px 12px' }}>
-                  <span style={{
-                    background: isLong ? 'rgba(0,230,118,0.15)' : 'transparent',
-                    color: actionColor,
-                    borderRadius: 4, padding: '2px 8px', fontWeight: 700, fontSize: 12,
-                  }}>
-                    {isLong ? '▲ LONG' : s.action === 'FLAT' ? '— FLAT' : '○ NO_SIGNAL'}
-                  </span>
+                <td style={{ padding: '9px 10px' }}>
+                  {isLong ? (
+                    <span style={{
+                      background: 'rgba(45,122,79,0.1)', color: 'var(--green)',
+                      borderRadius: 3, padding: '2px 8px', fontSize: '0.65rem',
+                      fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    }}>↑ Long</span>
+                  ) : s.action === 'FLAT' ? (
+                    <span style={{ color: 'var(--muted)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>— Flat</span>
+                  ) : (
+                    <span style={{ color: 'var(--border)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>○ —</span>
+                  )}
                 </td>
-                <td style={{ padding: '9px 12px', fontFamily: 'monospace' }}>
+                <td style={{ padding: '9px 10px', fontFamily: 'var(--serif)', fontSize: 14 }}>
                   {s.price != null ? `$${s.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
                 </td>
-                <td style={{ padding: '9px 12px', fontFamily: 'monospace', color: isLong ? '#00e676' : 'var(--text-muted)' }}>
+                <td style={{ padding: '9px 10px', color: isLong ? 'var(--green)' : 'var(--muted)', fontFamily: 'var(--serif)', fontSize: 14 }}>
                   {s.signal_prob != null ? `${(s.signal_prob * 100).toFixed(1)}%` : '—'}
                 </td>
-                <td style={{ padding: '9px 12px', fontSize: 12 }}>
+                <td style={{ padding: '9px 10px', fontSize: 12, color: 'var(--ink2)' }}>
                   {s.regime != null && s.regime !== -1 ? regimeLabel[s.regime] ?? `Rég. ${s.regime}` : '—'}
                 </td>
-                <td style={{ padding: '9px 12px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                <td style={{ padding: '9px 10px', color: 'var(--muted)', fontSize: 12 }}>
                   {s.ic_recent != null ? s.ic_recent.toFixed(4) : '—'}
                 </td>
-                <td style={{ padding: '9px 12px', color: 'var(--text-muted)', fontSize: 11, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <td style={{ padding: '9px 10px', color: 'var(--muted)', fontSize: 11, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {s.reject_reason ?? (isLong ? '✓ validado' : '')}
                 </td>
               </tr>

@@ -10,12 +10,8 @@ import IcWinChart      from '@/components/IcWinChart'
 import SignalsTable    from '@/components/SignalsTable'
 import SymbolBreakdown from '@/components/SymbolBreakdown'
 
-// ── Helpers ────────────────────────────────────────────────────────────
 function fmt$(n: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(n)
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
 function timeSince(ts: string) {
@@ -25,7 +21,6 @@ function timeSince(ts: string) {
   return `hace ${Math.floor(sec / 3600)}h`
 }
 
-// ── Dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [status,   setStatus]   = useState<BotStatus | null>(null)
   const [metrics,  setMetrics]  = useState<Metrics[]>([])
@@ -34,7 +29,6 @@ export default function Dashboard() {
   const [loading,  setLoading]  = useState(true)
   const [tab,      setTab]      = useState<'all' | 'long'>('all')
 
-  // ── Carga inicial ──────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     const [{ data: st }, { data: mt }, { data: sg }] = await Promise.all([
       supabase.from('bot_status').select('*').eq('bot_id', 'main').single(),
@@ -50,7 +44,6 @@ export default function Dashboard() {
 
   useEffect(() => { loadAll() }, [loadAll])
 
-  // ── Realtime subscriptions ─────────────────────────────────────────
   useEffect(() => {
     const ch = supabase
       .channel('dashboard-realtime')
@@ -64,7 +57,6 @@ export default function Dashboard() {
     return () => { supabase.removeChannel(ch) }
   }, [])
 
-  // ── KPIs derivados ─────────────────────────────────────────────────
   const latest  = metrics.length > 0 ? metrics[metrics.length - 1] : null
   const equity  = latest?.shadow_equity  ?? 100_000
   const pnl     = latest?.shadow_pnl_pct ?? 0
@@ -77,134 +69,296 @@ export default function Dashboard() {
   const activos = status?.activos?.split(',') ?? []
   const modo    = (status?.modo ?? 'shadow').toUpperCase()
 
-  const pnlColor = pnl >= 0 ? '#00e676' : '#f44336'
-  const modoColor: Record<string, string> = { SHADOW: '#2196f3', PAPER: '#ffc107', LIVE: '#00e676' }
-  const modeC = modoColor[modo] ?? '#2196f3'
+  const sectionLabel = (text: string) => (
+    <div style={{
+      fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase',
+      color: 'var(--muted)', fontWeight: 400, marginBottom: 20,
+      display: 'flex', alignItems: 'center', gap: 10,
+    }}>
+      {text}
+      <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    </div>
+  )
+
+  const card = (children: React.ReactNode, style?: React.CSSProperties) => (
+    <div style={{
+      background: '#fff', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius)', padding: '26px',
+      ...style,
+    }}>
+      {children}
+    </div>
+  )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
 
       {/* ── Header ──────────────────────────────────────────────────── */}
       <header style={{
-        background: 'var(--bg-card)', borderBottom: '1px solid var(--border)',
-        padding: '0 28px', height: 60,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 100,
+        background: 'rgba(250,248,243,0.96)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid var(--border)',
+        padding: '16px 48px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
+        {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 22 }}>🤖</span>
+          <div style={{
+            width: 38, height: 38, background: '#fff',
+            border: '1px solid rgba(184,146,42,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--gold)', lineHeight: 1 }}>M</span>
+          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>Trading Bot ML</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', fontWeight: 400, color: 'var(--ink)', letterSpacing: '-0.01em' }}>
+              Trading<em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>Bot ML</em>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--muted)', letterSpacing: '0.06em' }}>
               {activos.length > 0 ? activos.join(' · ') : 'Conectando...'}
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{
-            background: `${modeC}20`, color: modeC,
-            border: `1px solid ${modeC}`,
-            borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
-          }}>{modo}</span>
-
+        {/* Right side */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
           {kill && (
             <span style={{
-              background: '#f4433620', color: '#f44336', border: '1px solid #f44336',
-              borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700,
-            }}>⛔ KILL SWITCH</span>
+              background: 'var(--red-bg)', color: 'var(--red)',
+              border: '1px solid rgba(168,50,50,0.2)',
+              borderRadius: 4, padding: '6px 14px',
+              fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
+            }}>⛔ Kill Switch</span>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)' }}>
+          {/* Modo */}
+          <span style={{
+            background: 'var(--gold-bg)', color: 'var(--gold)',
+            border: '1px solid rgba(184,146,42,0.2)',
+            borderRadius: 4, padding: '6px 14px',
+            fontSize: '0.7rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
+          }}>{modo}</span>
+
+          {/* Status dot */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.7rem', color: 'var(--muted)', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             <div style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: loading ? '#ffc107' : running ? '#00e676' : '#f44336',
-              boxShadow: running ? '0 0 6px #00e676' : 'none',
+              width: 7, height: 7, borderRadius: '50%',
+              background: loading ? 'var(--gold)' : running ? 'var(--green)' : 'var(--red)',
+              boxShadow: running ? '0 0 0 3px rgba(45,122,79,0.15)' : 'none',
+              animation: running ? 'pulse 2s infinite' : 'none',
             }} />
-            {loading ? 'Cargando...' : running ? `Live · ${timeSince(lastPing)}` : 'Bot detenido'}
+            {loading ? 'Cargando' : running ? `Live · ${timeSince(lastPing)}` : 'Detenido'}
           </div>
+
+          <button
+            onClick={loadAll}
+            style={{
+              background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
+              fontFamily: 'var(--sans)', fontSize: '0.7rem', letterSpacing: '0.08em',
+              textTransform: 'uppercase', padding: '7px 16px', cursor: 'pointer', borderRadius: 4,
+            }}
+          >↻ Actualizar</button>
         </div>
       </header>
 
       {/* ── Main ────────────────────────────────────────────────────── */}
-      <main style={{ padding: '24px 28px', maxWidth: 1400, margin: '0 auto' }}>
+      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '36px 48px 80px' }}>
 
-        {/* KPI grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(175px, 1fr))', gap: 12, marginBottom: 20 }}>
-          <KpiCard icon="💰" label="Equity Shadow" value={fmt$(equity)}
+        {/* KPI */}
+        {sectionLabel('Resumen general')}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18, marginBottom: 36 }}>
+          <KpiCard
+            icon="💰" label="Equity Shadow" value={fmt$(equity)}
             sub={`P&L: ${pnl >= 0 ? '+' : ''}${(pnl * 100).toFixed(2)}%`}
-            color={pnl >= 0 ? 'green' : 'red'} />
-          <KpiCard icon="🎯" label="Win Rate"
+            color={pnl >= 0 ? 'green' : 'red'}
+          />
+          <KpiCard
+            icon="🎯" label="Win Rate"
             value={winRate != null ? `${(winRate * 100).toFixed(1)}%` : '—'}
             sub="Últimas 30 señales LONG"
-            color={winRate != null && winRate > 0.6 ? 'green' : 'default'} />
-          <KpiCard icon="🔬" label="IC Medio"
+            color={winRate != null && winRate > 0.6 ? 'green' : winRate != null ? 'gold' : 'default'}
+          />
+          <KpiCard
+            icon="🔬" label="IC Medio"
             value={ic != null ? ic.toFixed(4) : '—'}
-            sub={ic != null && ic > 0.05 ? '✅ Sobre umbral' : 'Umbral: > 0.05'}
-            color={ic != null && ic > 0.05 ? 'green' : 'default'} />
-          <KpiCard icon="🔄" label="Ciclos" value={String(cycles)}
-            sub={`${longs} señales LONG`} color="blue" />
-          <KpiCard icon="📊" label="Activos" value={String(activos.length || 8)}
-            sub={activos.slice(0, 4).join(', ') + (activos.length > 4 ? '…' : '')} color="blue" />
-          <KpiCard icon={kill ? '⛔' : '✅'} label="Sistema"
-            value={kill ? 'KILL SWITCH' : 'Operativo'}
-            sub={kill ? (status?.kill_reason ?? '') : `Modo ${modo}`}
-            color={kill ? 'red' : 'green'} />
+            sub={ic != null && ic > 0.05 ? 'Sobre umbral ✓' : 'Umbral: > 0.05'}
+            color={ic != null && ic > 0.05 ? 'green' : 'gold'}
+          />
+          <KpiCard
+            icon="🔄" label="Ciclos completados"
+            value={String(cycles)}
+            sub={`${longs} señales LONG detectadas`}
+            color="gold"
+          />
         </div>
 
         {/* Charts */}
-        <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14, marginBottom: 20 }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>📈 Curva de Equity</div>
-            <EquityChart data={metrics} />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: pnlColor, fontWeight: 700 }}>
-                {pnl >= 0 ? '▲' : '▼'} {pnl >= 0 ? '+' : ''}{(pnl * 100).toFixed(2)}% desde inicio
-              </span>
-            </div>
-          </div>
-
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>🔬 IC & Win Rate</div>
-            <IcWinChart data={metrics} />
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
-              Línea azul = umbral IC mínimo (5×10²). Shadow aprobado: IC &gt; 0.05 y Win &gt; 60%.
-            </div>
-          </div>
+        {sectionLabel('Evolución del sistema')}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18, marginBottom: 36 }}>
+          {card(
+            <>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', fontWeight: 400, color: 'var(--ink)', marginBottom: 4 }}>
+                Curva de Equity
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 300, marginBottom: 22 }}>
+                Capital hipotético shadow — sin órdenes reales
+              </div>
+              <EquityChart data={metrics} />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+                <span style={{ fontSize: '0.72rem', color: pnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 500 }}>
+                  {pnl >= 0 ? '▲' : '▼'} {pnl >= 0 ? '+' : ''}{(pnl * 100).toFixed(2)}% desde inicio
+                </span>
+              </div>
+            </>
+          )}
+          {card(
+            <>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', fontWeight: 400, color: 'var(--ink)', marginBottom: 4 }}>
+                IC & Win Rate
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 300, marginBottom: 22 }}>
+                Calidad de predicción del modelo
+              </div>
+              <IcWinChart data={metrics} />
+              <div style={{ fontSize: '0.68rem', color: 'var(--muted)', marginTop: 10, lineHeight: 1.6 }}>
+                Línea dorada = umbral IC mínimo. Shadow aprobado cuando IC &gt; 0.05 y Win Rate &gt; 60%.
+              </div>
+            </>
+          )}
         </div>
 
         {/* Symbol breakdown */}
         {signals.length > 0 && (
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>🌐 Estado por Símbolo</div>
-            <SymbolBreakdown signals={signals} />
-          </div>
+          <>
+            {sectionLabel('Estado por símbolo')}
+            {card(<SymbolBreakdown signals={signals} />, { marginBottom: 36 })}
+          </>
         )}
 
-        {/* Signals table */}
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>📋 Señales Recientes</div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(['all', 'long'] as const).map(t => (
-                <button key={t} onClick={() => setTab(t)} style={{
-                  background:   tab === t ? '#2196f320' : 'transparent',
-                  color:        tab === t ? '#2196f3'   : 'var(--text-muted)',
-                  border:       `1px solid ${tab === t ? '#2196f3' : 'var(--border)'}`,
-                  borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                }}>
-                  {t === 'all' ? 'Todas' : '▲ Solo LONG'}
-                </button>
-              ))}
+        {/* Signals */}
+        {sectionLabel('Señales recientes')}
+        {card(
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', fontWeight: 400, color: 'var(--ink)', marginBottom: 4 }}>
+                  Actividad del scanner
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 300 }}>
+                  Señales LONG / FLAT generadas por el modelo ensemble
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['all', 'long'] as const).map(t => (
+                  <button key={t} onClick={() => setTab(t)} style={{
+                    background:   tab === t ? 'var(--gold-bg2)' : 'none',
+                    color:        tab === t ? 'var(--gold)'     : 'var(--muted)',
+                    border:       `1px solid ${tab === t ? 'rgba(184,146,42,0.2)' : 'var(--border)'}`,
+                    borderRadius: 4, padding: '7px 16px',
+                    fontFamily: 'var(--sans)', fontSize: '0.7rem',
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
+                    cursor: 'pointer',
+                  }}>
+                    {t === 'all' ? 'Todas' : '↑ Solo LONG'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <SignalsTable signals={tab === 'all' ? signals : signals.filter(s => s.action === 'LONG')} />
+          </>
+        )}
+
+        {/* Decision panel */}
+        {sectionLabel('¿Qué hacer ahora?')}
+        <div style={{
+          background: 'var(--ink)', color: 'var(--bg)',
+          borderRadius: 'var(--radius)', padding: '30px',
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 22,
+          marginBottom: 36,
+        }}>
+          <div>
+            <div style={{ fontSize: '0.63rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(250,248,243,0.4)', marginBottom: 7 }}>
+              Fase actual
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.45rem', fontWeight: 300, marginBottom: 4 }}>
+              {modo === 'SHADOW' ? 'Shadow Mode' : modo === 'PAPER' ? 'Paper Trading' : 'Live Trading'}
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'rgba(250,248,243,0.45)', fontWeight: 300, lineHeight: 1.5 }}>
+              Sin dinero real. El modelo aprende y acumula estadísticas.
             </div>
           </div>
-          <SignalsTable signals={tab === 'all' ? signals : signals.filter(s => s.action === 'LONG')} />
+          <div>
+            <div style={{ fontSize: '0.63rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(250,248,243,0.4)', marginBottom: 7 }}>
+              Progreso
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.45rem', fontWeight: 300, marginBottom: 4 }}>
+              {cycles} / 30 ciclos
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'rgba(250,248,243,0.45)', fontWeight: 300, lineHeight: 1.5 }}>
+              Necesitas 30+ ciclos con IC &gt; 0.05 y win rate &gt; 60% para pasar a paper.
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: '0.63rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(250,248,243,0.4)', marginBottom: 7 }}>
+              Criterio aprobación
+            </div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.45rem', fontWeight: 300, marginBottom: 4 }}>
+              IC &gt; 0.05 · WR &gt; 60%
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'rgba(250,248,243,0.45)', fontWeight: 300, lineHeight: 1.5 }}>
+              Y kill switch inactivo durante todo el shadow period.
+            </div>
+          </div>
+          <div style={{ gridColumn: 'span 3', borderTop: '1px solid rgba(250,248,243,0.1)', paddingTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: '1.1rem', fontWeight: 300 }}>
+              {cycles < 30
+                ? 'Continúa el shadow mode — acumula ciclos y datos antes de avanzar'
+                : ic != null && ic > 0.05 && winRate != null && winRate > 0.6 && !kill
+                  ? '✓ Shadow aprobado — puedes pasar a MODO=paper cuando estés listo'
+                  : 'Ciclos suficientes, pero IC o win rate aún no alcanzan el umbral'}
+            </div>
+            <div style={{
+              padding: '9px 22px', borderRadius: 4, fontSize: '0.72rem',
+              letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 500,
+              background: 'rgba(184,146,42,0.2)', color: 'var(--gold2)',
+              border: '1px solid rgba(184,146,42,0.3)', whiteSpace: 'nowrap', marginLeft: 20,
+            }}>
+              ⏳ Recopilar datos
+            </div>
+          </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 28, paddingBottom: 20, fontSize: 11, color: 'var(--text-muted)' }}>
+        {/* System status */}
+        {sectionLabel('Estado del sistema')}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+          {[
+            { label: 'Bot',      value: running ? '● Activo' : '○ Detenido', ok: running },
+            { label: 'Modo',     value: `📄 ${modo}`,                         ok: true },
+            { label: 'Activos',  value: `${activos.length || 8} símbolos`,    ok: true },
+            { label: 'Kill switch', value: kill ? '⛔ ACTIVO' : '✓ Inactivo', ok: !kill },
+          ].map(item => (
+            <div key={item.label} style={{
+              background: '#fff', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)', padding: '16px 18px',
+            }}>
+              <div style={{ fontSize: '0.63rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 5 }}>
+                {item.label}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: item.ok ? 'var(--green)' : 'var(--red)', fontWeight: 400 }}>
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 48, fontSize: '0.68rem', color: 'var(--muted)', letterSpacing: '0.06em' }}>
           Actualización en tiempo real · Supabase Realtime · Trading Bot ML v1.0
         </div>
       </main>
+
+      <style>{`
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+      `}</style>
     </div>
   )
 }

@@ -1,36 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary:   #0a0e1a;
-  --bg-card:      #111827;
-  --bg-card2:     #1a2235;
-  --border:       #1e2d45;
-  --accent-green: #00e676;
-  --accent-blue:  #2196f3;
-  --accent-red:   #f44336;
-  --accent-gold:  #ffc107;
-  --text-primary: #e8eaf6;
-  --text-muted:   #90a4ae;
+  --bg:      #faf8f3;
+  --bg2:     #f2ede3;
+  --bg3:     #ede8dc;
+  --ink:     #18140e;
+  --ink2:    #3d3830;
+  --muted:   #8c8779;
+  --border:  rgba(26,20,10,0.1);
+  --gold:    #b8922a;
+  --gold2:   #d4aa4a;
+  --gold-bg: rgba(184,146,42,.07);
+  --gold-bg2:rgba(184,146,42,.14);
+  --green:   #2d7a4f;
+  --green-bg:rgba(45,122,79,.08);
+  --red:     #a83232;
+  --red-bg:  rgba(168,50,50,.08);
+  --serif:   'Cormorant Garamond', Georgia, serif;
+  --sans:    'DM Sans', sans-serif;
+  --radius:  8px;
 }
 
 @theme inline {
-  --color-background: var(--bg-primary);
-  --color-foreground: var(--text-primary);
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
 }
 
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg-primary);
-  color:      var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-  min-height: 100vh;
+  background:  var(--bg);
+  color:       var(--ink);
+  font-family: var(--sans);
+  font-weight: 300;
+  min-height:  100vh;
 }
 
-::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+/* Recharts override */
 .recharts-cartesian-grid-horizontal line,
-.recharts-cartesian-grid-vertical line { stroke: #1e2d45 !important; }
-.recharts-text { fill: #90a4ae !important; font-size: 11px !important; }
+.recharts-cartesian-grid-vertical   line { stroke: rgba(26,20,10,0.06) !important; }
+.recharts-text { fill: #8c8779 !important; font-size: 11px !important; font-family: 'DM Sans', sans-serif !important; }

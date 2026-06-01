@@ -8,16 +8,9 @@ import { Metrics } from '@/lib/supabase'
 
 type Props = { data: Metrics[] }
 
-function fmt(n: number) {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-  }).format(n)
-}
-
 function fmtTs(ts: string) {
   const d = new Date(ts)
-  return `${d.getDate()}/${d.getMonth() + 1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`
+  return `${d.getDate()}/${d.getMonth() + 1}`
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,44 +18,43 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload as Metrics
   const pnl = d.shadow_pnl_pct
-  const pnlColor = pnl >= 0 ? '#00e676' : '#f44336'
   return (
     <div style={{
-      background: '#1a2235', border: '1px solid #1e2d45',
-      borderRadius: 8, padding: '10px 14px', fontSize: 13,
+      background: '#fff', border: '1px solid rgba(26,20,10,0.1)',
+      borderRadius: 6, padding: '10px 14px', fontSize: 12,
+      fontFamily: 'var(--sans)', boxShadow: '0 4px 16px rgba(26,20,10,0.08)',
     }}>
-      <div style={{ color: '#90a4ae', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontWeight: 700, fontSize: 16 }}>{fmt(d.shadow_equity)}</div>
-      <div style={{ color: pnlColor }}>{pnl >= 0 ? '+' : ''}{(pnl * 100).toFixed(2)}%</div>
-      <div style={{ color: '#90a4ae', marginTop: 4 }}>Ciclo {d.n_cycles}</div>
+      <div style={{ color: 'var(--muted)', marginBottom: 4, fontSize: 11 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--serif)', fontWeight: 400, fontSize: 18, color: 'var(--ink)' }}>
+        ${d.shadow_equity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+      </div>
+      <div style={{ color: pnl >= 0 ? 'var(--green)' : 'var(--red)', fontSize: 12, marginTop: 2 }}>
+        {pnl >= 0 ? '+' : ''}{(pnl * 100).toFixed(2)}%
+      </div>
     </div>
   )
 }
 
 export default function EquityChart({ data }: Props) {
   if (!data.length) return (
-    <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+    <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 13 }}>
       Sin datos de equity aún...
     </div>
   )
 
-  const chartData = data.map(d => ({
-    ...d,
-    label: fmtTs(d.ts),
-    equity: d.shadow_equity,
-  }))
-
+  const chartData = data.map(d => ({ ...d, label: fmtTs(d.ts) }))
+  const isPositive = data[data.length - 1].shadow_equity >= data[0].shadow_equity
+  const color = isPositive ? '#2d7a4f' : '#a83232'
   const min = Math.min(...data.map(d => d.shadow_equity)) * 0.999
   const max = Math.max(...data.map(d => d.shadow_equity)) * 1.001
-  const isPositive = data[data.length - 1].shadow_equity >= data[0].shadow_equity
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={210}>
       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
         <defs>
-          <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%"  stopColor={isPositive ? '#00e676' : '#f44336'} stopOpacity={0.25} />
-            <stop offset="95%" stopColor={isPositive ? '#00e676' : '#f44336'} stopOpacity={0.02} />
+          <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%"  stopColor={color} stopOpacity={0.12} />
+            <stop offset="95%" stopColor={color} stopOpacity={0.01} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" />
@@ -72,16 +64,16 @@ export default function EquityChart({ data }: Props) {
           tick={{ fontSize: 10 }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={v => `$${(v/1000).toFixed(0)}k`}
-          width={48}
+          tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+          width={44}
         />
         <Tooltip content={<CustomTooltip />} />
         <Area
           type="monotone"
-          dataKey="equity"
-          stroke={isPositive ? '#00e676' : '#f44336'}
+          dataKey="shadow_equity"
+          stroke={color}
           strokeWidth={2}
-          fill="url(#equityGrad)"
+          fill="url(#eqGrad)"
           dot={false}
         />
       </AreaChart>

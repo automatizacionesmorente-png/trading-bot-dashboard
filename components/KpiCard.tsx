@@ -1,44 +1,50 @@
 'use client'
 
 type Props = {
-  label:    string
-  value:    string
-  sub?:     string
-  color?:   'green' | 'red' | 'blue' | 'gold' | 'default'
-  icon?:    string
+  label:  string
+  value:  string
+  sub?:   string
+  color?: 'green' | 'red' | 'gold' | 'default'
+  icon?:  string
 }
 
 const colorMap: Record<string, string> = {
-  green:   '#00e676',
-  red:     '#f44336',
-  blue:    '#2196f3',
-  gold:    '#ffc107',
-  default: '#e8eaf6',
+  green:   'var(--green)',
+  red:     'var(--red)',
+  gold:    'var(--gold)',
+  default: 'var(--ink)',
 }
 
 export default function KpiCard({ label, value, sub, color = 'default', icon }: Props) {
-  const c = colorMap[color]
   return (
     <div style={{
-      background:   'var(--bg-card)',
+      background:   '#fff',
       border:       '1px solid var(--border)',
-      borderRadius: 12,
-      padding:      '18px 22px',
-      display:      'flex',
-      flexDirection: 'column',
-      gap:          6,
+      borderRadius: 'var(--radius)',
+      padding:      '26px 22px',
+      position:     'relative',
+      overflow:     'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {icon && <span style={{ fontSize: 18 }}>{icon}</span>}
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-          {label}
-        </span>
+      {/* Gold top line on hover handled via CSS in globals */}
+      {icon && (
+        <div style={{ position: 'absolute', top: 18, right: 18, fontSize: '1.3rem', opacity: 0.22 }}>
+          {icon}
+        </div>
+      )}
+      <div style={{
+        fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase',
+        color: 'var(--muted)', fontWeight: 400, marginBottom: 10,
+      }}>
+        {label}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: c, lineHeight: 1 }}>
+      <div style={{
+        fontFamily: 'var(--serif)', fontSize: '2.3rem', fontWeight: 300,
+        color: colorMap[color], lineHeight: 1, marginBottom: 5,
+      }}>
         {value}
       </div>
       {sub && (
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+        <div style={{ fontSize: '0.72rem', color: 'var(--muted)', fontWeight: 300 }}>
           {sub}
         </div>
       )}
