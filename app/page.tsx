@@ -108,14 +108,14 @@ export default function Dashboard() {
             border: '1px solid rgba(184,146,42,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
-            <span style={{ fontFamily: 'var(--serif)', fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--gold)', lineHeight: 1 }}>M</span>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: '1.6rem', fontStyle: 'italic', color: 'var(--gold)', lineHeight: 1 }}>A</span>
           </div>
           <div>
             <div style={{ fontFamily: 'var(--serif)', fontSize: '1.4rem', fontWeight: 400, color: 'var(--ink)', letterSpacing: '-0.01em' }}>
-              Trading<em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>Bot ML</em>
+              Auto<em style={{ fontStyle: 'italic', color: 'var(--gold)' }}>MikeMor</em>
             </div>
             <div style={{ fontSize: '0.68rem', color: 'var(--muted)', letterSpacing: '0.06em' }}>
-              {activos.length > 0 ? activos.join(' · ') : 'Conectando...'}
+              {activos.length > 0 ? activos.join(' · ') : 'Trading Bot ML'}
             </div>
           </div>
         </div>

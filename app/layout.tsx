@@ -16,8 +16,8 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Trading Bot ML — Dashboard",
-  description: "Monitor en tiempo real del bot de trading algorítmico con ML",
+  title: "AutoMikeMor — Trading Bot ML",
+  description: "Monitor en tiempo real del bot de trading algorítmico con ML — AutoMikeMor",
 };
 
 export default function RootLayout({
